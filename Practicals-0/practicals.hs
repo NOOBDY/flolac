@@ -40,3 +40,9 @@ lift2 h f g x = h (f x) (g x)
 
 -- 4.d)
 f' = lift2 (*) (+ 1) (+ 2)
+
+-- Proofs
+-- 6
+fan :: a -> [a] -> [[a]]
+fan x [] = [[x]]
+fan x (y : ys) = (x : y : ys) : map (y :) (fan x ys)
