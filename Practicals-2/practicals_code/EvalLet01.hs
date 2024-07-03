@@ -1,20 +1,29 @@
-import Prelude ()
-import MiniPrelude
+{-# HLINT ignore "Use newtype instead of data" #-}
+{-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-data Expr = Num Int | Neg Expr | Add Expr Expr
-          | Div Expr Expr
-          | Var Name | Let Name Expr Expr
-  deriving Show
+import MiniPrelude
+import Prelude ()
+
+data Expr
+  = Num Int
+  | Neg Expr
+  | Add Expr Expr
+  | Div Expr Expr
+  | Var Name
+  | Let Name Expr Expr
+  deriving (Show)
 
 data Except err a = Return a | Throw err
-  deriving Show
+  deriving (Show)
 
 data Err = DivByZero | VarNotFound Name
-  deriving Show
+  deriving (Show)
 
 type Name = String
 
 type Env = [(Name, Int)]
+
 -- What if we define
 -- type Env = Name -> Maybe Int
 
@@ -26,11 +35,21 @@ type Env = [(Name, Int)]
 eval = undefined
 
 tstExpr00 :: Expr
-tstExpr00 = Let "x" (Num 3)
-             (Add (Add (Var "x") (Let "x" (Num 4) (Var "x")))
-                  (Neg (Var "x")))
+tstExpr00 =
+  Let
+    "x"
+    (Num 3)
+    ( Add
+        ( Add
+            (Var "x")
+            (Let "x" (Num 4) (Var "x"))
+        )
+        (Neg (Var "x"))
+    )
+
 --
 
+-- ReaderExcept
 data ReEx env err a = RE (env -> Except err a)
 
 type EvalMonad = ReEx Env Err
@@ -56,5 +75,5 @@ instance Functor (ReEx env err) where
   fmap = liftM
 
 instance Applicative (ReEx env err) where
-  pure  = return
+  pure = return
   (<*>) = ap
