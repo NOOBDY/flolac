@@ -2,6 +2,8 @@
 {-# OPTIONS_GHC -Wno-noncanonical-monad-instances #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
+{-# HLINT ignore "Avoid lambda" #-}
+
 import MiniPrelude
 import Prelude ()
 
@@ -31,7 +33,7 @@ type Env = [(Name, Int)]
 --   lookup :: Eq a => a -> [(a, b)] -> Maybe b
 -- is defined in GHC.List and imported here.
 
--- eval :: -- what's its type?
+eval :: Expr -> EvalMonad Int -- what's its type?
 eval = undefined
 
 tstExpr00 :: Expr
@@ -54,20 +56,31 @@ data ReEx env err a = RE (env -> Except err a)
 
 type EvalMonad = ReEx Env Err
 
+-- runReEx :: RE (env -> Except err a) -> env -> Except err a
 runReEx :: ReEx env err a -> env -> Except err a
 runReEx (RE f) = f
 
 instance Monad (ReEx env err) where
-  return = undefined
-  (>>=) = undefined
+  return x = RE (\env -> Return x)
+  (>>=) (RE mx) f =
+    RE
+      ( \env -> case mx env of
+          Return a -> runReEx (f a) env
+          Throw err -> Throw err
+      )
 
 instance MonadReader env (ReEx env err) where
-  ask = undefined
-  local = undefined
+  ask = RE (\env -> Return env)
+  local f re = RE (\env -> runReEx re (f env))
 
 instance MonadExcept err (ReEx env err) where
-  throw = undefined
-  catchE = undefined
+  throw err = RE (\env -> Throw err)
+  catchE (RE mx) f =
+    RE
+      ( \env -> case mx env of
+          Return a -> Return a
+          Throw e -> runReEx (f e) env
+      )
 
 -- Functor and Applicative instances
 
