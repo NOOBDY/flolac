@@ -34,7 +34,33 @@ type Env = [(Name, Int)]
 -- is defined in GHC.List and imported here.
 
 eval :: Expr -> EvalMonad Int -- what's its type?
-eval = undefined
+eval e = catchE (eval' e) handler
+ where
+  eval' :: Expr -> EvalMonad Int
+  eval' (Num n) = return n
+  eval' (Neg e) = eval e >>= \v -> return (negate v)
+  eval' (Add e0 e1) = do
+    v0 <- eval e0
+    v1 <- eval e1
+    return (v0 + v1)
+  eval' (Div e0 e1) = do
+    v0 <- eval e0
+    v1 <- eval e1
+    if v1 /= 0
+      then return (v0 `div` v1)
+      else throw DivByZero
+  eval' (Var x) = do
+    env <- ask
+    case lookup x env of
+      Just v -> return v
+      Nothing -> throw (VarNotFound x)
+  eval' (Let x e0 e1) = do
+    v <- eval e0
+    local (\env -> (x, v) : env) (eval e1)
+
+  handler :: Err -> EvalMonad Int
+  handler DivByZero = throw DivByZero
+  handler (VarNotFound x) = undefined -- ! I forgor
 
 tstExpr00 :: Expr
 tstExpr00 =
