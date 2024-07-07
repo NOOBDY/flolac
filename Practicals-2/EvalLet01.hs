@@ -62,6 +62,9 @@ eval e = catchE (eval' e) handler
   handler DivByZero = throw DivByZero
   handler (VarNotFound x) = undefined -- ! I forgor
 
+instance Show (EvalMonad Int) where
+  show (RE mx) = show (mx [])
+
 tstExpr00 :: Expr
 tstExpr00 =
   Let
