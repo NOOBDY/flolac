@@ -4,6 +4,7 @@
 
 {-# HLINT ignore "Avoid lambda" #-}
 
+import Debug.Trace
 import MiniPrelude
 import Prelude ()
 
@@ -60,7 +61,9 @@ eval e = catchE (eval' e) handler
 
   handler :: Err -> EvalMonad Int
   handler DivByZero = throw DivByZero
-  handler (VarNotFound x) = undefined -- ! I forgor
+  handler (VarNotFound x) =
+    -- ! I forgor
+    trace ("var " ++ x ++ " not found") (throw (VarNotFound x))
 
 instance Show (EvalMonad Int) where
   show (RE mx) = show (mx [])
@@ -75,7 +78,7 @@ tstExpr00 =
             (Var "x")
             (Let "x" (Num 4) (Var "x"))
         )
-        (Neg (Var "x"))
+        (Neg (Var "y"))
     )
 
 --

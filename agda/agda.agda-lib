@@ -1,0 +1,4 @@
+name: TheHoTTGame
+include: .
+depend: standard-library cubical
+flags: --cubical
